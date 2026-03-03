@@ -1,4 +1,4 @@
-## E‑commerce Fraud Monitoring Dashboard (Full Project)
+# 🛡️ E-Commerce Fraud Monitoring Dashboard
 
 This repository contains a complete, runnable demo for monitoring e‑commerce transactions **in real time**, assigning an **AI/heuristic fraud risk score**, storing history in MongoDB, and visualizing everything in a React dashboard.
 
