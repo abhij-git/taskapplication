@@ -32,7 +32,20 @@ This repository contains a complete, runnable demo for monitoring e‑commerce t
 
 ## Quick start (Docker) — recommended
 
-From the project root:
+You have two options:
+
+### Option A — Local MongoDB (no Atlas needed)
+
+This starts a local MongoDB container + the API + the frontend:
+
+```bash
+docker compose --profile local up --build
+```
+
+### Option B — MongoDB Atlas
+
+1) Put your Atlas connection string in root `.env` as `MONGODB_URI="mongodb+srv://..."`  
+2) Run:
 
 ```bash
 docker compose up --build
@@ -55,7 +68,6 @@ docker compose down
 ```
 
 ---
-
 ## Configuration (Environment Variables)
 
 Docker Compose reads the **root** `.env`. Defaults are provided in `docker-compose.yml`.
