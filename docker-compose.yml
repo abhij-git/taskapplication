@@ -1,0 +1,52 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: ecommerce-fraud-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./api
+    container_name: ecommerce-fraud-api
+    environment:
+      # MongoDB (defaults to local Docker MongoDB)
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/ecommerce_fraud_dashboard}
+
+      # JWT / security
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+
+      # OpenAI (optional; if not set, heuristic scoring is used)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+
+      # Mock data generator
+      MOCK_TX_INTERVAL_MS: ${MOCK_TX_INTERVAL_MS:-3000}
+      HIGH_RISK_THRESHOLD: ${HIGH_RISK_THRESHOLD:-75}
+
+      # Networking
+      PORT: 4000
+      FRONTEND_ORIGIN: http://localhost:5173
+    depends_on:
+      - mongo
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: ecommerce-fraud-frontend
+    depends_on:
+      - api
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+
