@@ -68,11 +68,11 @@ Docker Compose reads the **root** `.env`. Defaults are provided in `docker-compo
 
 - **Local (default for Docker)**: MongoDB runs in the `mongo` container
   - Default: `mongodb://mongo:27017/ecommerce_fraud_dashboard`
-- **MongoDB Atlas (optional)**: set `MONGODB_URI` to your Atlas connection string
+- **MongoDB Atlas **: set `MONGODB_URI` to your Atlas connection string
 
 ### AI scoring (OpenAI)
 
-- **Optional**: set `OPENAI_API_KEY` to enable OpenAI scoring
+- set `OPENAI_API_KEY` to enable OpenAI scoring
 - If `OPENAI_API_KEY` is empty, the backend uses a heuristic scorer (project still works)
 
 ### Useful tuning
