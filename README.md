@@ -1,68 +1,193 @@
-## E‑commerce Fraud Monitoring Dashboard (Frontend)
+## E‑commerce Fraud Monitoring Dashboard (Full Project)
 
-This is the React + Vite frontend for a real‑time e‑commerce transaction monitoring dashboard.  
-It connects to a secured Node.js/Express API and WebSocket stream to display live transactions, AI‑based fraud risk scores, and high‑risk alerts.
+This repository contains a complete, runnable demo for monitoring e‑commerce transactions **in real time**, assigning an **AI/heuristic fraud risk score**, storing history in MongoDB, and visualizing everything in a React dashboard.
 
-### Features
+### What this project includes
 
-- **JWT authentication**: Login as an admin or analyst to access the dashboard.
-- **Live transactions table**: Real‑time updates via WebSockets (Socket.io client).
-- **Risk trend chart**: Chart.js visualization of average risk over time.
-- **High‑risk alerts**: Highlight and surface suspicious transactions above a risk threshold.
+- **Mock transaction generator** (backend) producing a live stream
+- **WebSocket stream** to the browser via **Socket.io**
+- **AI-based anomaly scoring** via **OpenAI** (optional) + **heuristic fallback**
+- **MongoDB persistence** for history + trend aggregation
+- **JWT authentication** + role checks for REST and WebSockets
+- **React dashboard**: live table, risk chart, high‑risk alerts
+- **Docker Compose**: one command to run **MongoDB + API + frontend**
 
-### Prerequisites
+### Tech stack
 
-- **Node.js** (v18+ recommended)
-- The backend API from this project running locally (default: `http://localhost:4000`)
+- **Frontend**: React (Vite), Redux Toolkit, Socket.io client, Chart.js
+- **Backend**: Node.js, Express.js, Socket.io, Mongoose
+- **Database**: MongoDB (local Docker by default; MongoDB Atlas supported)
+- **Auth**: JWT (roles: `admin`, `analyst`)
+- **AI**: OpenAI Chat Completions API (optional)
+- **Infra**: Docker + Docker Compose
 
-### Environment Variables
+### Repository layout
 
-Create a `.env` file in the `frontend` folder if you want to override defaults:
+- `api/` — Express API + Socket.io namespace `/transactions`
+- `frontend/` — React dashboard UI
+- `docker-compose.yml` — runs `mongo`, `api`, `frontend`
+- `.env` — root environment file (used by Docker Compose)
 
-- **`VITE_API_BASE_URL`** – Base URL of the API (default: `http://localhost:4000`)
-- **`VITE_WS_URL`** – WebSocket URL for transactions namespace (default: `ws://localhost:4000/transactions`)
+---
 
-Example:
+## Quick start (Docker) — recommended
+
+From the project root:
 
 ```bash
-VITE_API_BASE_URL=http://localhost:4000
-VITE_WS_URL=ws://localhost:4000/transactions
+docker compose up --build
 ```
 
-### Getting Started (Development)
+Open:
+
+- **Dashboard**: `http://localhost:5173`
+- **API health**: `http://localhost:4000/health`
+
+Login (demo users):
+
+- **Admin**: `admin@example.com` / `Admin123!`
+- **Analyst**: `analyst@example.com` / `Analyst123!`
+
+Stop everything:
 
 ```bash
-# from project root
+docker compose down
+```
+
+---
+
+## Configuration (Environment Variables)
+
+Docker Compose reads the **root** `.env`. Defaults are provided in `docker-compose.yml`.
+
+### Required (recommended)
+
+- **`JWT_SECRET`**: secret used to sign JWTs (change from the default for real usage)
+
+### Database
+
+- **Local (default for Docker)**: MongoDB runs in the `mongo` container
+  - Default: `mongodb://mongo:27017/ecommerce_fraud_dashboard`
+- **MongoDB Atlas (optional)**: set `MONGODB_URI` to your Atlas connection string
+
+### AI scoring (OpenAI)
+
+- **Optional**: set `OPENAI_API_KEY` to enable OpenAI scoring
+- If `OPENAI_API_KEY` is empty, the backend uses a heuristic scorer (project still works)
+
+### Useful tuning
+
+- `OPENAI_MODEL` (default `gpt-4o-mini`)
+- `MOCK_TX_INTERVAL_MS` (default `3000`)
+- `HIGH_RISK_THRESHOLD` (default `75`)
+- `FRONTEND_ORIGIN` (default `http://localhost:5173`)
+- `PORT` (default `4000`)
+
+---
+
+## How it works (data flow)
+
+1) **Backend generates a mock transaction** every `MOCK_TX_INTERVAL_MS`  
+2) It computes:
+   - `riskScore` \(0–100\)
+   - `riskReason`
+   - `isHighRisk` (risk ≥ `HIGH_RISK_THRESHOLD`)
+3) It **stores** the transaction + score in **MongoDB**  
+4) It emits Socket.io events on namespace **`/transactions`**:
+   - **`transaction`**: every transaction
+   - **`highRisk`**: only high‑risk transactions
+5) The frontend connects via Socket.io using **JWT auth** and updates:
+   - live table
+   - alerts panel
+   - chart (from REST trend aggregation)
+
+---
+
+## API & WebSocket security (JWT + roles)
+
+### REST
+
+REST endpoints require `Authorization: Bearer <token>` (except health).
+
+### WebSockets (Socket.io)
+
+The browser connects to `/transactions` with:
+
+- `auth: { token: "<jwt>" }`
+
+Connections without a valid token are rejected.
+
+---
+
+## Endpoints (summary)
+
+### Auth
+
+- `POST /auth/login` — returns `{ token, user }`
+
+### Transactions (JWT required; roles: admin/analyst)
+
+- `GET /transactions?limit=100` — recent transactions
+- `GET /transactions/risk-trend?sinceMinutes=60` — aggregation buckets for the chart
+
+### Health
+
+- `GET /health` — `{ status: "ok" }`
+
+---
+
+## Run locally (without Docker)
+
+This is optional. Docker is the easiest path.
+
+### 1) Start MongoDB locally
+
+Either run MongoDB locally, or start only MongoDB with Docker:
+
+```bash
+docker compose up -d mongo
+```
+
+### 2) Run the backend
+
+```bash
+cd api
+npm install
+npm run dev
+```
+
+### 3) Run the frontend
+
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Then open the URL printed in the terminal (by default `http://localhost:5173`).
+Open `http://localhost:5173`.
 
-Make sure the backend API is running (usually from the `api` folder with `npm run dev`).
+---
 
-### Login Credentials (Demo)
+## Troubleshooting
 
-For local development, the backend exposes two demo users:
+- **Login fails**
+  - Check API health: `http://localhost:4000/health`
+  - Rebuild/restart: `docker compose down && docker compose up --build`
+- **No live transactions**
+  - Wait ~3–6 seconds (default interval is 3s)
+  - View API logs: `docker compose logs -f api`
+- **Port already in use**
+  - Stop old containers: `docker compose down`
 
-- **Admin**: `admin@example.com` / `Admin123!`
-- **Analyst**: `analyst@example.com` / `Analyst123!`
+---
 
-Use these credentials on the login screen to access the dashboard.
+## Demo video checklist
 
-### Available NPM Scripts
-
-- **`npm run dev`** – Start Vite dev server with hot reload.
-- **`npm run build`** – Create a production build.
-- **`npm run preview`** – Preview the built app locally.
-
-### Tech Stack
-
-- **React** (Vite)
-- **Redux Toolkit + React Redux**
-- **Socket.io Client** for live data
-- **Chart.js + react-chartjs-2** for charts
-
-
+- Run: `docker compose up --build`
+- Open: `http://localhost:5173`
+- Login as admin
+- Show:
+  - live table updating
+  - high‑risk alerts appearing
+  - risk trend chart changing over time
 
