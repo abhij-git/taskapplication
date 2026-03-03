@@ -68,7 +68,7 @@ Docker Compose reads the **root** `.env`. Defaults are provided in `docker-compo
 
 - **Local (default for Docker)**: MongoDB runs in the `mongo` container
   - Default: `mongodb://mongo:27017/ecommerce_fraud_dashboard`
-- **MongoDB Atlas**: set `MONGODB_URI` to your Atlas connection string
+- **MongoDBAtlas**: set `MONGODB_URI` to your Atlas connection string
 
 ### AI scoring (OpenAI)
 
